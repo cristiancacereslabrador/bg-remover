@@ -1,26 +1,22 @@
 import React, { useState } from "react";
 import axios from "axios";
-import ReactCropper from "react-easy-crop"; // Añadir la librería react-easy-crop
 
 export default function Home() {
   const [image, setImage] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fileFormat, setFileFormat] = useState("image/png"); // Formato de archivo seleccionado
-  const [crop, setCrop] = useState({ x: 0, y: 0 }); // Configuración de recorte
-  const [zoom, setZoom] = useState(1); // Nivel de zoom de la imagen
 
   // Maneja la carga de imágenes desde un archivo
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    setImage(URL.createObjectURL(file)); // Usamos URL.createObjectURL para mostrar la imagen previa
+    setImage(file);
   };
 
   // Maneja la carga mediante arrastrar y soltar
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    setImage(URL.createObjectURL(file)); // Usamos URL.createObjectURL para mostrar la imagen previa
+    setImage(file);
   };
 
   // Evita que el navegador abra archivos al arrastrarlos
@@ -47,7 +43,7 @@ export default function Home() {
         formData,
         {
           headers: {
-            "X-Api-Key": "TU_API_KEY" // Reemplaza con tu clave de API
+            "X-Api-Key": "r2S3kn65vxcB9yCpaBWwxumB" // Reemplaza con tu clave de API
           },
           responseType: "blob" // Devuelve la imagen como un blob
         }
@@ -63,7 +59,7 @@ export default function Home() {
     }
   };
 
-  // Función para descargar la imagen procesada con el tamaño y formato correcto
+  // Función para descargar la imagen procesada con el tamaño correcto
   const handleDownload = () => {
     const img = new Image();
     img.src = processedImage;
@@ -81,12 +77,10 @@ export default function Home() {
       ctx.fillRect(0, 0, canvas.width, canvas.height); // Aplica el fondo blanco
       ctx.drawImage(img, 0, 0, 600, 600);
 
-      // Crea un enlace de descarga para la imagen redimensionada en el formato seleccionado
+      // Crea un enlace de descarga para la imagen redimensionada
       const a = document.createElement("a");
-      a.href = canvas.toDataURL(fileFormat); // Usa el formato seleccionado (PNG o JPG)
-      a.download = `imagen_procesada.${
-        fileFormat === "image/png" ? "png" : "jpg"
-      }`; // El nombre del archivo descargado
+      a.href = canvas.toDataURL("image/png");
+      a.download = "imagen_procesada.png"; // El nombre del archivo descargado
       a.click();
     };
   };
@@ -120,43 +114,6 @@ export default function Home() {
           onChange={handleImageUpload}
           className="block w-full mb-6 p-2 border-2 border-gray-300 rounded-md"
         />
-
-        {/* Vista previa de la imagen con la opción de hacer zoom */}
-        {image && (
-          <div className="mb-6 relative w-full h-48 border border-gray-300 rounded-md">
-            <ReactCropper
-              image={image}
-              crop={crop}
-              zoom={zoom}
-              onZoomChange={setZoom} // Actualiza el zoom
-              onCropChange={setCrop} // Actualiza la posición del recorte
-              aspect={1} // Relación de aspecto cuadrada
-              style={{ width: "100%", height: "100%" }}
-            />
-          </div>
-        )}
-
-        {/* Selector de formato de archivo (PNG o JPG) */}
-        <div className="mb-6">
-          <label
-            htmlFor="fileFormat"
-            className="block text-gray-500 mb-2"
-            style={{
-              color: fileFormat === "image/png" ? "black" : "gray" // Cambia el color de la letra dependiendo del formato
-            }}
-          >
-            Selecciona el formato de imagen:
-          </label>
-          <select
-            id="fileFormat"
-            value={fileFormat}
-            onChange={(e) => setFileFormat(e.target.value)}
-            className="block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200 text-gray-700 focus:text-black"
-          >
-            <option value="image/png">PNG</option>
-            <option value="image/jpeg">JPG</option>
-          </select>
-        </div>
 
         {/* Botón para procesar */}
         <button

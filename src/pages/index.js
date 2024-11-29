@@ -59,7 +59,7 @@ export default function Home() {
         { image_file: image, size: "auto" },
         {
           headers: {
-            "X-Api-Key": process.env.NEXT_PUBLIC_API_1,
+            "X-Api-Key": API1,
             "Content-Type": "multipart/form-data"
           },
           responseType: "blob"

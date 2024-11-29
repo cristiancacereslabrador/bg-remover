@@ -5,7 +5,6 @@ import getCroppedImg from "./utils/cropImage";
 
 export default function Home() {
   const API1 = process.env.NEXT_PUBLIC_API_1;
-  console.log("API1 cargada: ", API1);
   const [image, setImage] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,6 +14,11 @@ export default function Home() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const cropperContainerRef = useRef(null);
+
+  useEffect(() => {
+    const api1Last8 = API1.slice(-8);
+    console.log("API1 cargada: ", api1Last8);
+  }, []);
 
   const handleWheelEvent = (e) => {
     if (!cropperContainerRef.current) return;
@@ -156,9 +160,9 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">
+    <div className="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-gray-600 p-6 rounded-lg shadow-lg shadow-black">
+        <h1 className="text-3xl font-semibold text-center text-gray-900 mb-6">
           Remove Background App
         </h1>
 
@@ -168,9 +172,9 @@ export default function Home() {
           className="border-4 border-dashed border-gray-300 rounded-lg p-8 mb-6 flex justify-center items-center"
         >
           {image ? (
-            <p className="text-gray-700">¡Imagen cargada! Puedes continuar.</p>
+            <p className="text-gray-300">¡Imagen cargada! Puedes continuar.</p>
           ) : (
-            <p className="text-gray-500">
+            <p className="text-gray-300">
               Arrastra una imagen aquí o haz clic para seleccionarla.
             </p>
           )}
@@ -185,7 +189,8 @@ export default function Home() {
 
         {image && (
           <div
-            className="mb-6 relative w-full h-48 border border-gray-300 rounded-md"
+            // className="mb-6 relative w-full h-48 border border-gray-300 rounded-md"
+            className="mb-6 relative w-full h-48 border-gray-300 rounded-md shadow-md"
             ref={cropperContainerRef}
             onWheel={handleWheelEvent}
           >
@@ -206,8 +211,9 @@ export default function Home() {
         <button
           onClick={handleRemoveBackground}
           disabled={loading}
-          className={`w-full py-3 bg-blue-500 text-white rounded-lg shadow-md transform transition-all duration-200 ${
-            loading ? "opacity-50" : "hover:scale-105 hover:bg-blue-600"
+          //   className={`w-full py-3 bg-sky-800 text-white rounded-lg shadow-md transform transition-all duration-200 uppercase ${
+          className={`w-full mt-4 py-3 px-6 font-semibold bg-sky-800 text-gray-300 rounded-lg shadow-lg hover:bg-sky-700 transition-all duration-300 uppercase ${
+            loading ? "opacity-50" : "hover:scale-105 hover:bg-sky-700"
           }`}
         >
           {loading ? "Procesando..." : "Eliminar fondo"}
@@ -218,7 +224,7 @@ export default function Home() {
             <div className="mt-4">
               <label
                 htmlFor="fileFormat"
-                className="block text-blue-500 mb-2 font-semibold"
+                className="block text-gray-300 mb-2 font-semibold"
               >
                 Selecciona el formato de imagen:
               </label>
@@ -226,29 +232,29 @@ export default function Home() {
                 id="fileFormat"
                 value={fileFormat}
                 onChange={(e) => setFileFormat(e.target.value)}
-                className="block w-full p-2 border-2 border-gray-300 rounded-md text-blue-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="block w-full p-2 border-2  border-gray-300 rounded-md text-sky-800 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-700"
               >
-                <option value="image/jpeg" className="text-blue-500">
+                <option value="image/jpeg" className="text-sky-800">
                   JPG (Joint Photographic Experts Group)
                 </option>
-                <option value="image/png" className="text-blue-500">
+                <option value="image/png" className="text-sky-800">
                   PNG (Portable Network Graphics)
                 </option>
               </select>
             </div>
 
             <div className="mt-6">
-              <h3 className="text-xl font-semibold text-gray-800">
+              <h3 className="block text-gray-300 mb-2 font-semibold">
                 Imagen procesada:
               </h3>
               <img
                 src={processedImage}
                 alt="Procesada"
-                className="mx-auto w-48 h-48 object-cover rounded-lg shadow-md"
+                className="mx-auto w-48 h-48 object-cover rounded-lg shadow-md bg-white"
               />
               <button
                 onClick={handleDownload}
-                className="w-full mt-4 py-3 px-6 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-all duration-300"
+                className="w-full mt-4 py-3 px-6 font-semibold bg-green-800 text-white rounded-lg shadow-lg hover:bg-green-700 transition-all duration-300 uppercase hover:scale-105"
               >
                 Descargar imagen
               </button>

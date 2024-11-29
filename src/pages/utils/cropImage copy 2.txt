@@ -1,6 +1,7 @@
 export default async function getCroppedImg(
   imageSrc,
   croppedAreaPixels,
+  zoom,
   fileFormat
 ) {
   // Asegúrate de que este código se ejecute solo en el cliente
@@ -8,6 +9,7 @@ export default async function getCroppedImg(
     return null;
   }
 
+  const createImage = (url) =>
   const createImage = (url) =>
     new Promise((resolve, reject) => {
       const image = new Image();
@@ -17,19 +19,14 @@ export default async function getCroppedImg(
     });
 
   const image = await createImage(imageSrc);
-
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  // Establece el tamaño del canvas a 600x600 píxeles
-  canvas.width = 600;
-  canvas.height = 600;
+  // Establece el tamaño del canvas
+  canvas.width = croppedAreaPixels.width;
+  canvas.height = croppedAreaPixels.height;
 
-  // Dibuja un fondo blanco
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Ajusta la imagen al canvas y aplica el recorte
+  // Dibuja la imagen en el canvas, aplicando el recorte
   ctx.drawImage(
     image,
     croppedAreaPixels.x,
@@ -38,8 +35,8 @@ export default async function getCroppedImg(
     croppedAreaPixels.height,
     0,
     0,
-    canvas.width,
-    canvas.height
+    croppedAreaPixels.width,
+    croppedAreaPixels.height
   );
 
   // Convierte el canvas en un blob o dataURL
@@ -53,7 +50,7 @@ export default async function getCroppedImg(
         resolve(URL.createObjectURL(blob));
       },
       fileFormat || "image/png",
-      1 // Calidad máxima
+      1 // Calidad máxima (para JPG)
     );
   });
 }

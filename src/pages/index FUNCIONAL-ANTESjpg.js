@@ -8,21 +8,39 @@ export default function Home() {
   const [image, setImage] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fileFormat, setFileFormat] = useState("image/jpeg");
+  const [fileFormat, setFileFormat] = useState("image/jpg");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const cropperContainerRef = useRef(null);
 
-  const handleWheelEvent = (e) => {
-    if (!cropperContainerRef.current) return;
-    if (!cropperContainerRef.current.contains(e.target)) return;
+  // Asegúrate de definir la función antes de usarla
+  //   const handleWheelEvent = (e) => {
+  //     e.preventDefault();
+  //     if (!cropperContainerRef.current.contains(e.target)) return;
+  //     const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
+  //     setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limita el zoom entre 1 y 3
+  //   };
 
-    e.preventDefault();
+  // //   const handleWheelEvent = (e) => {
+  // //     if (cropperContainerRef.current.contains(e.target)) {
+  // //       e.preventDefault(); // Previene el desplazamiento solo si estamos dentro del cropper
+  // //       const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
+  // //       setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limita el zoom entre 1 y 3
+  // //     }
+  // //   };
+
+  // Asegúrate de que este código esté en el componente Home
+
+  const handleWheelEvent = (e) => {
+    if (!cropperContainerRef.current) return; // Validar si el ref existe
+    if (!cropperContainerRef.current.contains(e.target)) return; // Validar si el evento ocurre dentro del contenedor
+
+    e.preventDefault(); // Prevenir el comportamiento predeterminado
 
     const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
-    setZoom(Math.min(Math.max(newZoom, 1), 3));
+    setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limitar el zoom entre 1 y 3
   };
 
   useEffect(() => {
@@ -34,12 +52,23 @@ export default function Home() {
       });
     }
 
+    // Limpiar el evento al desmontar el componente
     return () => {
       if (cropperContainer) {
         cropperContainer.removeEventListener("wheel", handleWheelEvent);
       }
     };
   }, [zoom]);
+
+  useEffect(() => {
+    // Registrar el evento "wheel" con { passive: false }
+    window.addEventListener("wheel", handleWheelEvent, { passive: false });
+
+    // Limpiar el evento cuando el componente se desmonte
+    return () => {
+      window.removeEventListener("wheel", handleWheelEvent);
+    };
+  }, [zoom]); // Asegúrate de que `zoom` esté en las dependencias
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -87,6 +116,7 @@ export default function Home() {
         formData,
         {
           headers: {
+            // "X-Api-Key": "r2S3kn65vxcB9yCpaBWwxumB",
             "X-Api-Key": API1,
             "Content-Type": "multipart/form-data"
           },
@@ -104,54 +134,18 @@ export default function Home() {
     }
   };
 
-  // //   const handleDownload = async () => {
-  // //     if (!processedImage) return;
-
-  // //     const response = await fetch(processedImage);
-  // //     const blob = await response.blob();
-
-  // //     const a = document.createElement("a");
-  // //     a.href = URL.createObjectURL(blob);
-  // //     a.download = `imagen_procesada.${fileFormat.split("/")[1]}`;
-  // //     a.click();
-  // //   };
   const handleDownload = async () => {
     if (!processedImage) return;
 
     const response = await fetch(processedImage);
     const blob = await response.blob();
 
-    // Crear un objeto URL temporal para la imagen procesada
-    const img = new Image();
-    img.src = URL.createObjectURL(blob);
-
-    img.onload = () => {
-      // Crear un canvas para renderizar la imagen procesada
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      const ctx = canvas.getContext("2d");
-
-      // Dibujar un fondo blanco antes de renderizar la imagen
-      ctx.fillStyle = "white"; // Color de fondo blanco
-      ctx.fillRect(0, 0, canvas.width, canvas.height); // Llenar todo el canvas
-
-      // Dibujar la imagen procesada sobre el fondo blanco
-      ctx.drawImage(img, 0, 0);
-
-      // Convertir el canvas al formato seleccionado
-      const dataUrl = canvas.toDataURL(fileFormat); // 'image/jpeg' o 'image/png'
-
-      // Crear el enlace de descarga con el formato correcto
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `imagen_procesada.${fileFormat.split("/")[1]}`; // jpg o png
-      a.click();
-
-      // Liberar el objeto URL temporal
-      URL.revokeObjectURL(img.src);
-    };
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `imagen_procesada.${
+      fileFormat === "image/png" ? "jpg" : "png"
+    }`;
+    a.click();
   };
 
   return (
@@ -186,7 +180,7 @@ export default function Home() {
           <div
             className="mb-6 relative w-full h-48 border border-gray-300 rounded-md"
             ref={cropperContainerRef}
-            onWheel={handleWheelEvent}
+            onWheel={handleWheelEvent} // Usamos la función definida arriba
           >
             <Cropper
               image={image}
@@ -202,6 +196,23 @@ export default function Home() {
           </div>
         )}
 
+        <div className="mb-6">
+          <label htmlFor="fileFormat" className="block text-gray-700 mb-2">
+            Selecciona el formato de imagen:
+          </label>
+          <select
+            id="fileFormat"
+            value={fileFormat}
+            onChange={(e) => setFileFormat(e.target.value)}
+            className="text-blue-600 block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
+          >
+            <option value="image/jpeg">
+              JPG (Joint Photographic Experts Group)
+            </option>
+            <option value="image/png">PNG (Portable Network Graphics) </option>
+          </select>
+        </div>
+
         <button
           onClick={handleRemoveBackground}
           disabled={loading}
@@ -213,46 +224,22 @@ export default function Home() {
         </button>
 
         {processedImage && (
-          <>
-            <div className="mt-4">
-              <label
-                htmlFor="fileFormat"
-                className="block text-blue-500 mb-2 font-semibold"
-              >
-                Selecciona el formato de imagen:
-              </label>
-              <select
-                id="fileFormat"
-                value={fileFormat}
-                onChange={(e) => setFileFormat(e.target.value)}
-                className="block w-full p-2 border-2 border-gray-300 rounded-md text-blue-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="image/jpeg" className="text-blue-500">
-                  JPG (Joint Photographic Experts Group)
-                </option>
-                <option value="image/png" className="text-blue-500">
-                  PNG (Portable Network Graphics)
-                </option>
-              </select>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-xl font-semibold text-gray-800">
-                Imagen procesada:
-              </h3>
-              <img
-                src={processedImage}
-                alt="Procesada"
-                className="mx-auto w-48 h-48 object-cover rounded-lg shadow-md"
-              />
-              <button
-                onClick={handleDownload}
-                className="w-full mt-4 py-3 px-6 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-all duration-300"
-              >
-                Descargar imagen
-              </button>
-            </div>
-          </>
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold text-gray-800">
+              Imagen procesada:
+            </h3>
+            <img
+              src={processedImage}
+              alt="Procesada"
+              className="mx-auto w-48 h-48 object-cover rounded-lg shadow-md"
+            />
+            <button
+              onClick={handleDownload}
+              className="w-full mt-4 py-3 px-6 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-all duration-300"
+            >
+              Descargar imagen
+            </button>
+          </div>
         )}
       </div>
     </div>

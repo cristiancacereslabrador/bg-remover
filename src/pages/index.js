@@ -162,7 +162,7 @@ export default function Home() {
   return (
     <div className="bg-gray-900 min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-gray-600 p-6 rounded-lg shadow-lg shadow-black">
-        <h1 className="text-3xl font-semibold text-center text-gray-900 mb-6">
+        <h1 className="sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center text-gray-900 mb-6 text-xl">
           Remove Background App
         </h1>
 
@@ -172,7 +172,9 @@ export default function Home() {
           className="border-4 border-dashed border-gray-300 rounded-lg p-8 mb-6 flex justify-center items-center"
         >
           {image ? (
-            <p className="text-gray-300">¡Imagen cargada! Puedes continuar.</p>
+            <p className="text-base text-gray-300">
+              ¡Imagen cargada! Continúa.
+            </p>
           ) : (
             <p className="text-gray-300">
               Arrastra una imagen aquí o haz clic para seleccionarla.
@@ -232,7 +234,7 @@ export default function Home() {
                 id="fileFormat"
                 value={fileFormat}
                 onChange={(e) => setFileFormat(e.target.value)}
-                className="block w-full p-2 border-2  border-gray-300 rounded-md text-sky-800 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-700"
+                className="block w-full p-2  font-semibold border-gray-900 rounded-md text-sky-700 bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-700 shadow-md"
               >
                 <option value="image/jpeg" className="text-sky-800">
                   JPG (Joint Photographic Experts Group)

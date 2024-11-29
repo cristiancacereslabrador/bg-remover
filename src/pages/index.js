@@ -59,8 +59,9 @@ export default function Home() {
         { image_file: image, size: "auto" },
         {
           headers: {
-            "X-Api-Key": API1,
+            "X-Api-Key": "r2S3kn65vxcB9yCpaBWwxumB",
             "Content-Type": "multipart/form-data"
+            // "X-Api-Key": API1,
           },
           responseType: "blob"
         }

@@ -1,7 +1,6 @@
 export default async function getCroppedImg(
   imageSrc,
   croppedAreaPixels,
-  zoom,
   fileFormat
 ) {
   // Asegúrate de que este código se ejecute solo en el cliente
@@ -21,11 +20,9 @@ export default async function getCroppedImg(
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  // Establece el tamaño del canvas
   canvas.width = croppedAreaPixels.width;
   canvas.height = croppedAreaPixels.height;
 
-  // Dibuja la imagen en el canvas, aplicando el recorte
   ctx.drawImage(
     image,
     croppedAreaPixels.x,
@@ -38,7 +35,6 @@ export default async function getCroppedImg(
     croppedAreaPixels.height
   );
 
-  // Convierte el canvas en un blob o dataURL
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
@@ -49,7 +45,7 @@ export default async function getCroppedImg(
         resolve(URL.createObjectURL(blob));
       },
       fileFormat || "image/png",
-      1 // Calidad máxima (para JPG)
+      1
     );
   });
 }

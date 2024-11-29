@@ -5,6 +5,7 @@ import getCroppedImg from "./utils/cropImage";
 
 export default function Home() {
   const API1 = process.env.NEXT_PUBLIC_API_1;
+  console.log("API1 cargada: ", API1);
   const [image, setImage] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+// Importaciones necesarias
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "./utils/cropImage";
@@ -13,38 +14,25 @@ export default function Home() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   useEffect(() => {
-    if (!API1) {
-      console.error("API Key no encontrada. Revisa tu archivo .env.");
-    } else {
-      console.log("API KEY cargada correctamente:", API1);
-    }
+    console.log("typeof.API1:", typeof API1);
+    // console.log("API KEY:", API1);
   }, []);
-  // Ref para el contenedor de la imagen (cropper)
-  const cropperContainerRef = useRef(null);
 
-  //   useEffect(() => {
-  //     console.log("APIKEY: ", API1);
-  //   }, []);
-
-  // Maneja la carga de imágenes desde un archivo
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // Maneja la carga mediante arrastrar y soltar
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // Evita que el navegador abra archivos al arrastrarlos
   const handleDragOver = (e) => {
     e.preventDefault();
   };
 
-  // Procesa la imagen usando la API de Remove.bg
   const handleRemoveBackground = async () => {
     if (!image) {
       alert("Por favor, selecciona una imagen primero.");
@@ -54,19 +42,41 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
+      // Recortar la imagen visible antes de enviarla
+      const croppedImageUrl = await getCroppedImg(
+        image,
+        croppedAreaPixels,
+        fileFormat
+      );
+
+      // Convertir la imagen recortada a Blob
+      const response = await fetch(croppedImageUrl);
+      const croppedBlob = await response.blob();
+
+      // Crear un objeto FormData para enviar la imagen recortada
+      const formData = new FormData();
+      formData.append(
+        "image_file",
+        croppedBlob,
+        `image.${fileFormat.split("/")[1]}`
+      );
+      formData.append("size", "auto");
+
+      const apiResponse = await axios.post(
         "https://api.remove.bg/v1.0/removebg",
-        { image_file: image, size: "auto" },
+        formData,
         {
           headers: {
-            "X-Api-Key": process.env.NEXT_PUBLIC_API_1,
+            // "X-Api-Key": API1,
+            "X-Api-Key": "r2S3kn65vxcB9yCpaBWwxumB",
             "Content-Type": "multipart/form-data"
           },
           responseType: "blob"
         }
       );
 
-      const blobUrl = URL.createObjectURL(response.data);
+      // Procesar la respuesta de la API
+      const blobUrl = URL.createObjectURL(apiResponse.data);
       setProcessedImage(blobUrl);
     } catch (error) {
       console.error("Error al procesar la imagen:", error);
@@ -76,31 +86,20 @@ export default function Home() {
     }
   };
 
-  // Maneja el evento de zoom con la rueda del ratón
   const handleWheel = (e) => {
     e.preventDefault();
-
-    // Verifica si el mouse está dentro del área del cropper
-    if (!cropperContainerRef.current.contains(e.target)) {
-      return; // Si el mouse no está dentro del área, no hacer zoom
-    }
-
-    const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1); // Aumentar o disminuir el zoom
-    setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limitar el zoom entre 1 y 3
+    const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
+    setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limita el zoom entre 1 y 3
   };
 
-  // Descarga la imagen procesada con el tamaño y formato correcto
   const handleDownload = async () => {
     if (!processedImage) return;
 
-    const croppedImageUrl = await getCroppedImg(
-      processedImage,
-      croppedAreaPixels,
-      fileFormat
-    );
+    const response = await fetch(processedImage);
+    const blob = await response.blob();
 
     const a = document.createElement("a");
-    a.href = croppedImageUrl;
+    a.href = URL.createObjectURL(blob);
     a.download = `imagen_procesada.${
       fileFormat === "image/png" ? "png" : "jpg"
     }`;
@@ -114,7 +113,6 @@ export default function Home() {
           Remove Background App
         </h1>
 
-        {/* Zona de arrastrar y soltar */}
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -129,7 +127,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Input para seleccionar imagen */}
         <input
           type="file"
           accept="image/*"
@@ -137,12 +134,10 @@ export default function Home() {
           className="block w-full mb-6 p-2 border-2 border-gray-300 rounded-md"
         />
 
-        {/* Vista previa de la imagen con la opción de recortar */}
         {image && (
           <div
             className="mb-6 relative w-full h-48 border border-gray-300 rounded-md"
-            ref={cropperContainerRef} // Referencia al contenedor
-            onWheel={handleWheel} // Aquí agregamos el manejo de la rueda
+            onWheel={handleWheel}
           >
             <Cropper
               image={image}
@@ -153,12 +148,11 @@ export default function Home() {
               onCropComplete={(_, croppedAreaPixels) =>
                 setCroppedAreaPixels(croppedAreaPixels)
               }
-              aspect={1} // Relación de aspecto cuadrada
+              aspect={1}
             />
           </div>
         )}
 
-        {/* Selector de formato de archivo */}
         <div className="mb-6">
           <label htmlFor="fileFormat" className="block text-gray-700 mb-2">
             Selecciona el formato de imagen:
@@ -167,14 +161,13 @@ export default function Home() {
             id="fileFormat"
             value={fileFormat}
             onChange={(e) => setFileFormat(e.target.value)}
-            className="text-blue-500 block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
+            className="block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
           >
             <option value="image/png">PNG</option>
             <option value="image/jpeg">JPG</option>
           </select>
         </div>
 
-        {/* Botón para procesar */}
         <button
           onClick={handleRemoveBackground}
           disabled={loading}
@@ -185,7 +178,6 @@ export default function Home() {
           {loading ? "Procesando..." : "Eliminar fondo"}
         </button>
 
-        {/* Imagen procesada */}
         {processedImage && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold text-gray-800">

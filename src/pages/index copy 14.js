@@ -167,7 +167,7 @@ export default function Home() {
             id="fileFormat"
             value={fileFormat}
             onChange={(e) => setFileFormat(e.target.value)}
-            className="text-blue-500 block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
+            className="block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
           >
             <option value="image/png">PNG</option>
             <option value="image/jpeg">JPG</option>

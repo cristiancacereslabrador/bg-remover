@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+// Importaciones necesarias
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "./utils/cropImage";
@@ -12,39 +13,53 @@ export default function Home() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  useEffect(() => {
-    if (!API1) {
-      console.error("API Key no encontrada. Revisa tu archivo .env.");
-    } else {
-      console.log("API KEY cargada correctamente:", API1);
-    }
-  }, []);
-  // Ref para el contenedor de la imagen (cropper)
-  const cropperContainerRef = useRef(null);
 
   //   useEffect(() => {
-  //     console.log("APIKEY: ", API1);
+  //     if (!API1) {
+  //       console.error("API Key no encontrada. Revisa tu archivo .env.");
+  //     } else {
+  //       console.log("API KEY cargada correctamente:", API1);
+  //     }
   //   }, []);
 
-  // Maneja la carga de imágenes desde un archivo
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // Maneja la carga mediante arrastrar y soltar
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // Evita que el navegador abra archivos al arrastrarlos
   const handleDragOver = (e) => {
     e.preventDefault();
   };
 
-  // Procesa la imagen usando la API de Remove.bg
+  const addWhiteBackground = async (imageBlob) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(imageBlob);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        const ctx = canvas.getContext("2d");
+        // Rellenar con blanco
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Dibujar la imagen procesada
+        ctx.drawImage(img, 0, 0);
+
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, fileFormat);
+      };
+    });
+  };
+
   const handleRemoveBackground = async () => {
     if (!image) {
       alert("Por favor, selecciona una imagen primero.");
@@ -54,53 +69,77 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
+      const croppedImageUrl = await getCroppedImg(
+        image,
+        croppedAreaPixels,
+        fileFormat
+      );
+
+      const response = await fetch(croppedImageUrl);
+      const croppedBlob = await response.blob();
+
+      const formData = new FormData();
+      formData.append(
+        "image_file",
+        croppedBlob,
+        `image.${fileFormat.split("/")[1]}`
+      );
+      formData.append("size", "auto");
+
+      const apiResponse = await axios.post(
         "https://api.remove.bg/v1.0/removebg",
-        { image_file: image, size: "auto" },
+        formData,
         {
           headers: {
-            "X-Api-Key": process.env.NEXT_PUBLIC_API_1,
+            "X-Api-Key": API1,
             "Content-Type": "multipart/form-data"
           },
           responseType: "blob"
         }
       );
 
-      const blobUrl = URL.createObjectURL(response.data);
+      // Agregar fondo blanco
+      const imageWithWhiteBg = await addWhiteBackground(apiResponse.data);
+
+      const blobUrl = URL.createObjectURL(imageWithWhiteBg);
       setProcessedImage(blobUrl);
     } catch (error) {
       console.error("Error al procesar la imagen:", error);
-      alert("Ocurrió un error. Verifica tu API Key.");
+      alert("Ocurrió un error. Verifica tu API Key o el archivo seleccionado.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Maneja el evento de zoom con la rueda del ratón
-  const handleWheel = (e) => {
-    e.preventDefault();
+  //   const handleWheel = (e) => {
+  //     e.preventDefault();
+  //     const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
+  //     setZoom(Math.min(Math.max(newZoom, 1), 3));
+  //   };
+  useEffect(() => {
+    const handleWheelEvent = (e) => {
+      e.preventDefault();
+      const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1);
+      setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limita el zoom entre 1 y 3
+    };
 
-    // Verifica si el mouse está dentro del área del cropper
-    if (!cropperContainerRef.current.contains(e.target)) {
-      return; // Si el mouse no está dentro del área, no hacer zoom
-    }
+    // Registra el evento `wheel` con { passive: false }
+    window.addEventListener("wheel", handleWheelEvent, { passive: false });
 
-    const newZoom = zoom + (e.deltaY > 0 ? -0.1 : 0.1); // Aumentar o disminuir el zoom
-    setZoom(Math.min(Math.max(newZoom, 1), 3)); // Limitar el zoom entre 1 y 3
-  };
+    return () => {
+      // Limpia el evento cuando el componente se desmonte
+      window.removeEventListener("wheel", handleWheelEvent);
+    };
+  }, [zoom]);
 
-  // Descarga la imagen procesada con el tamaño y formato correcto
   const handleDownload = async () => {
     if (!processedImage) return;
 
-    const croppedImageUrl = await getCroppedImg(
-      processedImage,
-      croppedAreaPixels,
-      fileFormat
-    );
+    const response = await fetch(processedImage);
+    const blob = await response.blob();
 
     const a = document.createElement("a");
-    a.href = croppedImageUrl;
+    a.href = URL.createObjectURL(blob);
     a.download = `imagen_procesada.${
       fileFormat === "image/png" ? "png" : "jpg"
     }`;
@@ -114,7 +153,6 @@ export default function Home() {
           Remove Background App
         </h1>
 
-        {/* Zona de arrastrar y soltar */}
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -129,7 +167,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Input para seleccionar imagen */}
         <input
           type="file"
           accept="image/*"
@@ -137,12 +174,10 @@ export default function Home() {
           className="block w-full mb-6 p-2 border-2 border-gray-300 rounded-md"
         />
 
-        {/* Vista previa de la imagen con la opción de recortar */}
         {image && (
           <div
             className="mb-6 relative w-full h-48 border border-gray-300 rounded-md"
-            ref={cropperContainerRef} // Referencia al contenedor
-            onWheel={handleWheel} // Aquí agregamos el manejo de la rueda
+            onWheel={handleWheelEvent}
           >
             <Cropper
               image={image}
@@ -153,12 +188,11 @@ export default function Home() {
               onCropComplete={(_, croppedAreaPixels) =>
                 setCroppedAreaPixels(croppedAreaPixels)
               }
-              aspect={1} // Relación de aspecto cuadrada
+              aspect={1}
             />
           </div>
         )}
 
-        {/* Selector de formato de archivo */}
         <div className="mb-6">
           <label htmlFor="fileFormat" className="block text-gray-700 mb-2">
             Selecciona el formato de imagen:
@@ -167,14 +201,13 @@ export default function Home() {
             id="fileFormat"
             value={fileFormat}
             onChange={(e) => setFileFormat(e.target.value)}
-            className="text-blue-500 block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
+            className="block w-full p-2 border-2 border-gray-300 rounded-md bg-gray-200"
           >
             <option value="image/png">PNG</option>
             <option value="image/jpeg">JPG</option>
           </select>
         </div>
 
-        {/* Botón para procesar */}
         <button
           onClick={handleRemoveBackground}
           disabled={loading}
@@ -185,7 +218,6 @@ export default function Home() {
           {loading ? "Procesando..." : "Eliminar fondo"}
         </button>
 
-        {/* Imagen procesada */}
         {processedImage && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold text-gray-800">
